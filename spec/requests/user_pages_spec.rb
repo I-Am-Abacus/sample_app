@@ -27,9 +27,46 @@ describe 'UserPages' do
 
     let(:submit) { 'Create my account' }          # Submit button
 
+    # describe 'with no fields filled' do
+    #   it 'should return the correct error messages' do
+    #     click_button submit
+    #
+    #
+    #   end
+    # end
+
     describe 'with invalid information' do
       it 'should not create a user' do
         expect { click_button submit }.not_to change(User, :count)
+      end
+
+      describe 'after submission with empty fields' do
+        before { click_button submit }
+
+        it { should have_title(full_title('Sign up')) }
+        it { should have_selector('li', text:'Name can\'t be blank') }
+        it { should have_selector('li', text:'Email can\'t be blank') }
+        it { should have_selector('li', text:'Email is invalid') }
+        it { should have_selector('li', text:'Password can\'t be blank') }
+        it { should have_selector('li', text:'Password is too short (minimum is 6 characters')}
+      end
+
+      describe 'after submission with invalid email' do
+        before do
+          fill_in 'Email',     with: 'foobar'
+          click_button submit
+        end
+
+        it { should have_selector('li', text:'Email is invalid') }
+      end
+
+      describe 'after submission with mismatched passwords' do
+        before do
+          fill_in 'Password',     with: 'foobar'
+          click_button submit
+        end
+
+        it { should have_selector('li', text:'Password confirmation can\'t be blank') }
       end
     end
 
@@ -43,6 +80,14 @@ describe 'UserPages' do
 
       it 'should create a user' do
         expect { click_button submit }.to change(User, :count).by(1)
+      end
+
+      describe 'after saving the user' do
+        before { click_button submit }
+        let(:user) { User.find_by(email: 'user@example.com') }
+
+        it { should have_title(full_title(user.name)) }
+        it { should have_selector('div.alert.alert-success', text: 'Welcome') }
       end
     end
   end
