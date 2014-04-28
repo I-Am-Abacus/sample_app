@@ -8,6 +8,7 @@ end
 
 Then(/^they should see an error message$/) do
   expect(page).to have_selector('div.alert.alert-error')
+
 end
 
 Given(/^the user has an account$/) do
