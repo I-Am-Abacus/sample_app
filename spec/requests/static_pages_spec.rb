@@ -1,4 +1,5 @@
 require 'spec_helper'
+require 'support/utilities'
 
 describe 'Static pages' do
 
