@@ -20,7 +20,6 @@ describe 'Authentication' do
       before { click_button 'Sign in' }
 
       it { should have_full_title('Sign in') }
-      # it { should have_selector('div.alert.alert-error') }
       it { should have_error_message('Invalid') }
 
       describe 'after visiting another page' do
@@ -46,7 +45,6 @@ describe 'Authentication' do
       it { should have_link('Settings',   href: edit_user_path(user)) }
       it { should have_link('Sign out',   href: signout_path) }
       it { should_not have_link('Sign in') }
-      # it { should have_selector('div.alert.alert-success', text: 'Welcome back') }
       it { should have_success_message('Welcome back') }
 
       describe 'followed by signout' do
@@ -61,6 +59,15 @@ describe 'Authentication' do
     describe 'for non-signed-in users' do
       let(:user) { FactoryGirl.create(:user) }
 
+      describe 'when not signed in' do
+        before { visit root_path }
+        it { should_not have_link('Profile') }
+        it { should_not have_link('Settings') }
+        it { should_not have_link('Sign out') }
+        it { should have_link('Sign in')}
+
+      end
+
       describe 'when attempting to visit a protected page' do
         before do
           visit edit_user_path(user)
@@ -70,9 +77,19 @@ describe 'Authentication' do
         end
 
         describe 'after signing in' do
-
           it 'should render the desired protected page' do
-            expect(page).to have_title('Edit user')
+            expect(page).to have_full_title('Edit user')
+          end
+        end
+
+        describe 'after signing in twice' do
+          before do
+            click_link 'Sign out'
+            spec_sign_in(user)
+          end
+
+          it 'should render the profile page' do
+            expect(page).to have_full_title(user.name)
           end
         end
       end
@@ -97,23 +114,43 @@ describe 'Authentication' do
       end
     end
 
-    describe "as wrong user" do
+    describe 'as signed-in user' do
+      let(:signin_user) { FactoryGirl.create(:user) }
+
+      describe 'submitting a GET request to the Users#new action' do
+        before do
+          spec_sign_in signin_user, no_capybara: true
+          get new_user_path
+        end
+        specify { expect(response).to redirect_to(root_url) }
+      end
+
+      describe 'submitting a POST request to the Users#create action' do
+        let(:params) do
+          { user: { name: signin_user.name, email: signin_user.email, password: signin_user.password, password_confirmation: signin_user.password } }
+        end
+        before do
+          spec_sign_in signin_user, no_capybara: true
+          post users_path, params
+        end
+        specify { expect(response).to redirect_to(root_url) }
+      end
+    end
+
+    describe 'as wrong user' do
       let(:user) { FactoryGirl.create(:user) }
       let(:wrong_user) do
-        FactoryGirl.create(:user, name: 'abc', email: "wrong@example.com")
-        # user_with_diff_email = user.dup
-        # user_with_diff_email.email = "wrong@example.com"
-        # user_with_diff_email
+        FactoryGirl.create(:user, name: 'abc', email: 'wrong@example.com')
       end
       before { spec_sign_in user, no_capybara: true }
 
-      describe "submitting a GET request to the Users#edit action" do
+      describe 'submitting a GET request to the Users#edit action' do
         before { get edit_user_path(wrong_user) }
         specify { expect(response.body).not_to match(full_title('Edit user')) }
         specify { expect(response).to redirect_to(root_url) }
       end
 
-      describe "submitting a PATCH request to the Users#update action" do
+      describe 'submitting a PATCH request to the Users#update action' do
         before { patch user_path(wrong_user) }
         specify { expect(response).to redirect_to(root_url) }
       end
@@ -127,6 +164,18 @@ describe 'Authentication' do
 
       describe 'submitting a DELETE request to the Users#destroy action' do
         before { delete user_path(user) }
+        specify { expect(response).to redirect_to(root_url) }
+      end
+    end
+
+    describe 'as admin user' do
+      # let(:user) { FactoryGirl.create(:user) }
+      let(:admin) { FactoryGirl.create(:admin) }
+
+      before { spec_sign_in admin, no_capybara: true  }
+
+      describe 'submitting a DELETE request for self to the Users#destroy action' do
+        before { delete user_path(admin) }
         specify { expect(response).to redirect_to(root_url) }
       end
     end

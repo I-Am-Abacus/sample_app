@@ -75,14 +75,6 @@ describe 'User pages' do
 
     let(:submit) { 'Create my account' }          # Submit button
 
-    # describe 'with no fields filled' do
-    #   it 'should return the correct error messages' do
-    #     click_button submit
-    #
-    #
-    #   end
-    # end
-
     describe 'with invalid information' do
       it 'should not create a user' do
         expect { click_button submit }.not_to change(User, :count)
@@ -124,7 +116,7 @@ describe 'User pages' do
         fill_in 'Name',         with: 'Example user'
         fill_in 'Email',        with: 'user@example.com'
         fill_in 'Password',     with: 'foobar'
-        fill_in 'Confirmation', with: 'foobar'
+        fill_in 'Confirm Password', with: 'foobar'
       end
 
       it 'should create a user' do
@@ -168,7 +160,7 @@ describe 'User pages' do
         fill_in 'Name',                   with: new_name
         fill_in 'Email',                  with: new_email
         fill_in 'Password',               with: user.password
-        fill_in 'Password confirmation',  with: user.password
+        fill_in 'Confirm Password',  with: user.password
         click_button 'Save changes'
       end
 
@@ -179,6 +171,17 @@ describe 'User pages' do
       let(:reloaded_user) { user.reload }
       specify { expect(reloaded_user.name).to eq(new_name) }
       specify { expect(reloaded_user.email).to eq(new_email) }
+    end
+
+    describe 'forbidden attributes' do
+      let(:params) do
+        { user: { admin: true, password: user.password, password_confirmation: user.password } }
+      end
+      before do
+        spec_sign_in user, no_capybara: true
+        patch user_path(user), params
+      end
+      specify { expect(user.reload).not_to be_admin }
     end
   end
 end
