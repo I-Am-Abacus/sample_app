@@ -86,6 +86,11 @@ describe 'User pages' do
         describe 'toggling the button' do
           before { click_button 'Follow' }
           it { should have_xpath("//input[@value='Unfollow']") }
+
+          describe 'other user should show as following' do
+            before { visit user_path(user) }
+            it { should have_link("1 following", href: following_user_path(user)) }
+          end
         end
       end
 
@@ -94,6 +99,9 @@ describe 'User pages' do
           user.follow!(other_user)
           visit user_path(other_user)
         end
+
+        it { should have_link("0 following", href: following_user_path(other_user)) }
+        it { should have_link("1 followers", href: followers_user_path(other_user)) }
 
         it 'should decrement the followed user count' do
           expect { click_button('Unfollow') }.to change(user.followed_users, :count).by(-1)
@@ -106,6 +114,7 @@ describe 'User pages' do
         describe 'toggling the button' do
           before { click_button 'Unfollow' }
           it { should have_xpath("//input[@value='Follow']") }
+          it { should have_link("0 followers", href: followers_user_path(other_user)) }
         end
       end
     end

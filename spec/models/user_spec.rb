@@ -192,5 +192,19 @@ describe User do
       it { should_not be_following(other_user) }
       its(:followed_users) { should_not include(other_user) }
     end
+
+    it 'should destroy association link to followed user' do
+      # microposts = @user.followed_users.to_a
+      other_user.destroy
+      expect(@user.followed_users).not_to include(other_user)
+      expect(Relationship.where(followed_id: other_user.id)).to be_empty
+    end
+
+    it 'should destroy association link to following user' do
+      # microposts = @user.followed_users.to_a
+      other_user.destroy
+      expect(other_user.followers).not_to include(@user)
+      expect(Relationship.where(follower_id: other_user.id)).to be_empty
+    end
   end
 end
